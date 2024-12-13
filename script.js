@@ -1,4 +1,6 @@
-let display = '';
+let num1 = '';
+let num2 = '';
+let operation = '';
 function add(a,b){
 	return a+b;
 }
@@ -12,11 +14,11 @@ function multiply(a,b){
 }
 
 function divide(a,b){
-	return (b != 0) ? a/b : "Error";
+	return a/b;
 }
 
 function modulus(a,b){
-	return (b != 0) ? a%b : "Error";
+	return a%b;
 
 }
 
@@ -24,161 +26,174 @@ function roundNumber(num){
 	return parseInt(num.toFixed(4));
 }
 
-function addNumToDisplay(value){
-	display += value;
-	displayToCalculator();
-}
-
-function addOperationToDisplay(value){
-	if(display.match(/(?<!^|[+\-*/%])[+\-*/%](?=[^+\-*/%]*$)/) || display === ''){
-		//run the function to calculate the display.
-		calculate();
+function addNum(value){
+	if(num1 === "Error"){
+		num1 = '';
+	}
+	if(operation){
+		num2 += value;
 	}
 	else{
-		display += value;
+		num1 += value;
 	}
-	displayToCalculator();
+	renderDisplay();
+}
+
+function addOperation(value){
+	if(num1 === "Error"){
+		num1 = '';
+	}
+	if(operation){
+		//calculate, add the operation after
+		if(num2){
+			calculate();
+		}
+		operation = value;
+	}
+	else{
+		operation = value;
+	}
+	renderDisplay();
 }
 
 function calculate(){
-	const operator = /(?<!^|[+\-*/%])[+\-*/%](?=[^+\-*/%]*$)/.exec(display)[0]; //extracts operator, allows for negative numbers
-
-	console.table(operator);
-	let numberArray = display.split(/(?<!^|[+\-*/%])[+\-*/%](?=[^+\-*/%]*$)/).filter(num=> num !== ''); // extract numbers, filters out empty string in case of something like '9/ enter'
-
-	console.log(numberArray);
-
-	numberArray.map((num, index)=>  numberArray[index] = Number(num));
-
-	console.table(numberArray);
-	if(operator && (numberArray[1] || numberArray[1] === 0)){
-		switch(operator){
-			case '*':
-				display = multiply(numberArray[0], numberArray[1]);
-				break;
-			case '/':
-				display = divide(numberArray[0], numberArray[1]);
-				break;
-			case '-':
-				display = subtract(numberArray[0], numberArray[1]);
-				break;
-			case '+':
-				display = add(numberArray[0], numberArray[1]);
-				break;
-			case '%':
-				display = modulus(numberArray[0], numberArray[1]);
-				break;
-			default:
-				break;
-		};
-		display = display.toString();
+	let result;
+	const number1 = Number(num1);
+	const number2 = Number(num2);
+	switch(operation){
+		case '*':
+			num1 = parseFloat(multiply(number1, number2).toFixed(4));
+			break;
+		case '+':
+			num1 = parseFloat(add(number1, number2).toFixed(4));
+			break;
+		case '-':
+			num1 = parseFloat(subtract(number1, number2).toFixed(4));
+			break;
+		case '/':
+			if(number2 === 0){
+				num1 = "Error";
+				num2 = '';
+				operation = '';
+				renderDisplay();
+				return;
+			}
+			num1 = parseFloat(divide(number1, number2).toFixed(4));
+			break;
+		case '%':
+			if(number2 === 0){
+				num1 = "Error";
+				num2 = '';
+				operation = '';
+				renderDisplay();
+				return;
+			}
+			num1 = parseFloat(modulus(number1, number2).toFixed(4));
+			break;
+		default:
+			break;
 	}
-	displayToCalculator();
-};
+	num1 = num1.toString();
+	num2 = '';
+	operation = '';
+	renderDisplay();
+}
 
 function addDecimal(){
-	let numberArray = display.split(/(?<!^|[+\-*/%])[+\-*/%](?=[^+\-*/%]*$)/);
-	if(numberArray[numberArray.length-1].includes('.')){
-		//do nothing, has a decimal place already.
+	if(num1 === "Error"){
+		num1 = '';
+	}
+	if(operation){
+		if(!num2.includes('.')){
+			num2 += '.';
+		}
 	}
 	else{
-		display += '.';
-		displayToCalculator();
+		if(!num1.includes('.')){
+			num1 += '.';
+		}
 	}
+	renderDisplay();
 }
 
 document.querySelectorAll('.js-num').forEach((button)=>{
 	button.addEventListener('click', ()=>{
-		if(display === "Error"){
-			display = '';
-		}
-		addNumToDisplay(button.textContent)
+		addNum(button.textContent);
 	});
 });
 
 document.querySelectorAll('.js-op').forEach((button)=>{
 	button.addEventListener('click', ()=>{
-		if(display === "Error"){
-			display = '';
-		}
-		addOperationToDisplay(button.textContent)
-		}
-	);
+		addOperation(button.textContent);
+	});
 });
 
 document.querySelector('.js-clear').addEventListener('click', ()=>{
-	display = '';
-	displayToCalculator();
+	num1 = '';
+	num2 = '';
+	operation = '';
+	renderDisplay();
 });
 
 document.querySelector('.js-dec').addEventListener('click', ()=>{
-	if(display === "Error"){
-		display = '';
-	}
 	addDecimal();
 });
 
 document.querySelector('.js-enter').addEventListener('click', ()=>{
-	if(display === "Error"){
-		display = '';
-	}
 	calculate();
 });
 
-function displayToCalculator(){
-	document.querySelector('.js-display').textContent = display;
+function renderDisplay(){
+	document.querySelector('.js-display').textContent = num1 + operation + num2;
 }
 
 document.querySelector('.js-invert').addEventListener(('click'), ()=>{
-	const operatorMatch = /(?<!^|[+\-*/%])[+\-*/%](?=[^+\-*/%]*$)/.exec(display);  //returns array, array can be null.
-	const operator = operatorMatch ? operatorMatch[0] : '';
-	let numberArray = display.split(/(?<!^|[+\-*/%])[+\-*/%](?=[^+\-*/%]*$)/);
-
-	
-	let lastNumber = numberArray[numberArray.length-1]
-	if(lastNumber.includes('-')){
-		//has a negative already, you must delete this!
-		lastNumber = lastNumber.slice(1);
+	if(operation){
+		if(num2.includes('-')){ //if second number is negative
+			num2 = num2.slice(1);
+		}
+		else{
+			num2 = '-' + num2;
+		}
 	}
 	else{
-		lastNumber = '-' + lastNumber;
+		if(num1.includes('-')){
+			num1 = num1.slice(1);
+		}
+		else{
+			num1 = '-' + num1;
+		}
 	}
-	console.log(lastNumber);
-	if(operator){
-		//if there is an operator, then it suggests that there is another number. (check done earlier to confirm that it exists)
-		display = numberArray[0] + operator + lastNumber;	
-	}
-	else{
-		display = lastNumber;
-		//if no operator, there is just one number, which means we can just equal it to the inverted number.
-	}
-	displayToCalculator();
+	renderDisplay();
 });
 
 document.querySelector('body').addEventListener('keydown', (event)=>{
-	if(event.key.match(/[1234567890]/)){
-		addNumToDisplay(event.key);
+	if(event.key.match(/[0-9]/)){
+		addNum(event.key);
+		return;
+	}
+	if(event.key.match(/[+\-%*/]/)){
+		addOperation(event.key);
 		return;
 	}
 	if(event.key === "Enter"){
-		if(display === "Error"){
-			display = '';
-		}
 		calculate();
 		return;
 	}
-	if(event.key.match(/[+\-*/%]/)){
-		addOperationToDisplay(event.key);
+	if(event.key==="Backspace"){
+		if(num2){
+			num2 = num2.slice(0, -1);
+		}
+		else if(operation){
+			operation = '';
+		}
+		else if(num1){
+			num1 = num1.slice(0,-1);
+		}
+		renderDisplay();
 		return;
 	}
-	if(event.key === "Backspace"){
-		display = display.slice(0, -1);
-		displayToCalculator();
-	}
 	if(event.key === "."){
-		if(display === "Error"){
-			display = '';
-		}
 		addDecimal();
 	}
-})
+});
